@@ -1,0 +1,3 @@
+base,callsign,callsignAbbr,companyCode,hexCode,icao,lastAirport,lastAirports,lastDistance,lastLat,lastLon,lastSeenDate,notes,operator,source,tailNumber
+ZZZZ,C2714,C2714,0,AE4CF7,C27,ZZZZ,,0,0.0,0.0,2025-05-06T03:37:46.887417+00:00,,US Coast Guard,,C2714
+ZZZZ,C2702,C2702,0,AE2126,C27,ZZZZ,,0,0.0,0.0,2025-05-06T03:26:14.327921+00:00,,US Coast Guard,,C2702

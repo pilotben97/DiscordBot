@@ -1,0 +1,3 @@
+alert,alt_baro,alt_geom,baro_rate,category,dbFlags,emergency,flight,gs,gva,hex,lat,lon,messages,mlat,nac_p,nac_v,nav_altitude_mcp,nav_heading,nav_qnh,nic,nic_baro,r,rc,rssi,sda,seen,seen_pos,sil,sil_type,spi,squawk,t,tisb,track,type,version
+0,475,225,-832,A2,1,none,C2702   ,118,2,ae2126,38.645142,-121.400719,8530758,[],10,1,2400,332.58,1006.4,8,1,2702,186,-8.8,2,0,0.26,3,perhour,0,3205,C27J,['geom_rate'],0.49,adsb_icao,2
+0,550,,0,A0,1,,C2714   ,200,,ae4cf7,33.064461,-117.383629,12298153,"['gs', 'track', 'baro_rate', 'squawk', 'lat', 'lon', 'nic', 'rc']",,,,,,0,,2714,0,-12.6,,0.4,0.42,,,0,3773,C27J,[],74,mlat,0
