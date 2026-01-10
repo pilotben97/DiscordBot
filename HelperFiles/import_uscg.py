@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from typing import List, Optional
 from Classes.Aircraft import Aircraft
+from HelperFiles.misc_helper import is_valid_hex
 
 
 def process_uscg_aircraft_csv(file_path: str):
@@ -47,9 +48,10 @@ def process_uscg_aircraft_csv(file_path: str):
 
             record = dict(zip(header, row[:key_col_index]))
             #print(record)
+
             hex_code = next((value for key, value in record.items() if key.lower().startswith("hex") and value.strip()), None)
 
-            if not hex_code or not hex_code.strip():
+            if not hex_code or not is_valid_hex(hex_code):
                 continue
             
             

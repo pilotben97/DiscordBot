@@ -10,7 +10,7 @@ import csv
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from Classes.Aircraft import Aircraft # My class
 from Classes.ADSBData import ADSBData # My class
@@ -70,7 +70,7 @@ async def get_fleet_moving(hex_code_list, aircraft_list, notify, channel):
             hexcode = ac.get("hex", "").upper()
             on_ground = ac.get("gnd", True)  # Default to True if missing
             speed = ac.get("gs", 0.0) # Get groundspeed, default to 0
-            
+
             #For testing to see what is causing speed check error
             #print(speed,df[df['Hex Code'] == hexcode].iloc[0]['Callsign'])
 
@@ -127,64 +127,22 @@ async def get_fleet_moving(hex_code_list, aircraft_list, notify, channel):
                 description=f"[Click here to view on ADS-B]({clickable_url})",
                 color=discord.Color.green()
             )
-
-            if(notify):
+            try:
                 await channel.send(content=formatted_output, embed=embed)
+            except discord.HTTPException as e:
+                await channel.send("⚠️ Unable to send message due to formatting or size limits.")
+                print(f"Discord HTTPException: {e}")
+            except discord.Forbidden:
+                print("Bot doesn't have permission to send messages to this channel.")
+            except discord.NotFound:
+                print("Channel not found.")
+            except Exception as e:
+                print(f"Unexpected error when sending message: {e}")
 
+                
             return moving
 
-
-            '''# Lookup info in the original dataframe
-            match_info = civlhexlist[civlhexlist['Hex Code'] == hexcode].iloc[0]
-            callsign = match_info['Callsign']
-            operator = match_info['Operator']
-            tailnumber = match_info['Tail Number']
-            network_cs = match_info['Network Callsign']
-
-            #fallback if no callsign in csv
-            if pd.isna(callsign) or str(callsign).strip() == "":
-                callsign = (f"[{tailnumber}]")
-
-            lat = ac.get("lat")
-            lon = ac.get("lon")
-            #closest_icao, closest_name, distance_nm = airport_utils.find_closest_zbw_airport(lat, lon)
-            
-            #update location even if on ground
-            #aircraft_utils.update_aircraft_activity(hexcode, closest_icao, distance_nm)
-
-            if not on_ground or speed > 5:
-                matches.append((callsign, hexcode, operator, tailnumber, closest_icao, closest_name, distance_nm))
-                
-        if(notify):
-            output = "✅ Aircraft currently moving:\n"
-            if matches:
-                clickable_url = "https://globe.adsbexchange.com/?icao="
-                
-                #await channel.send("✅ Aircraft currently moving:")
-                for callsign, hexcode, operator, tailnumber, closest_icao, closest_name, distance_nm in matches:
-                    output += (
-                        f"{callsign} ({tailnumber}) - {operator} --- "
-                        f"Closest airport: {closest_name} ({closest_icao}) - {distance_nm} NM\n"
-                    )
-                    #output = output + f"{callsign} ({tailnumber}) - {operator}\n"
-                    clickable_url += f"{hexcode},"
-
-                embed = Embed(title="", description=f"[Click here to view on ADS-B]({clickable_url})", color=0x00ff00)
-
-                if output:
-                    await channel.send(content=output, embed=embed)
-                    #await channel.send(f"{output}\n")
-                    #await channel.send(embed=embed)
-            else:
-                await channel.send("❌ No listed aircraft are currently airborne.")
-
-    else:
-        if(notify):
-            await channel.send(f"❌ <@182096548501520384> API request failed with status code: {response.status_code}")'''
-
-
-
-########################################################################### Housekeeping Tasks (Startup, remove old messages, etc) ###########################################################################
+########################################################################### Housekeeping Tasks (Startup, periodic function runs, remove old messages, etc) ###########################################################################
 
 ############ On Startup ############
 @bot.event
@@ -197,9 +155,37 @@ async def on_ready(): #start
     if channel is None:
         print(f"❌ Could not find channel ID: {RAZOR_SERVER_BOT_CH_ID}")
         return
-
+    
     await get_fleet_moving(uscg_hex_string, uscg_aircraft_list, True, channel)
+    await start_periodic_task(15)
 
+async def start_periodic_task(every_x_minutes: int):
+    await bot.wait_until_ready()
+
+    while not bot.is_closed():
+        now = datetime.now(timezone.utc)
+        minute = now.minute
+        remainder = minute % every_x_minutes
+        channel = bot.get_channel(RAZOR_SERVER_BOT_CH_ID)
+        if channel:
+            if remainder == 0:
+                delay_seconds = 0
+            else:
+                next_minute = minute + (every_x_minutes - remainder)
+                next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=next_minute)
+                delay_seconds = (next_run - now).total_seconds()
+
+            print(f"⏳ Waiting {int(delay_seconds/60)} m and {int(delay_seconds%60)} s seconds for first run...")
+            await asyncio.sleep(delay_seconds)
+
+            while not bot.is_closed():
+                #print(f"⏰ Running task at {datetime.now(timezone.utc)}")
+                await get_fleet_moving(uscg_hex_string, uscg_aircraft_list, True, channel)
+                await asyncio.sleep(every_x_minutes * 60)
+
+        if channel is None:
+            print(f"❌ Could not find channel ID: {RAZOR_SERVER_BOT_CH_ID}")
+            return
 
 ############ Remove old messages (All except "currently moving") made by this bot ############
 @bot.command(name="zxclear")
