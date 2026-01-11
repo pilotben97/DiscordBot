@@ -149,7 +149,7 @@ async def get_fleet_moving(hex_code_list, aircraft_list, notify, channel):
 async def on_ready(): #start
     channel = bot.get_channel(RAZOR_SERVER_BOT_CH_ID)
     if channel:
-        await channel.send(f'Test - Logged in as {bot.user.name}')
+        await channel.send(f'Logged in as {bot.user.name}')
 
     channel = bot.get_channel(RAZOR_SERVER_BOT_CH_ID)
     if channel is None:
